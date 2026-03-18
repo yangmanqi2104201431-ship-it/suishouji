@@ -150,6 +150,13 @@ body {
 .preset-tag.selected { background:var(--accent); color:#fff; border-color:var(--accent); }
 .prompt-custom { width:100%; box-sizing:border-box; border:1.5px solid var(--paper-dark); border-radius:10px; padding:10px 12px; font-size:13px; color:var(--ink); background:var(--paper); resize:none; outline:none; line-height:1.7; font-family:inherit; }
 .prompt-custom:focus { border-color:var(--accent); }
+.prompt-history-label { font-size:11px; color:var(--ink-faint); margin:10px 0 6px; }
+.prompt-history-item { display:flex; align-items:center; gap:6px; margin-bottom:6px; }
+.prompt-history-text { flex:1; font-size:12px; color:var(--ink-light); background:var(--paper); border:1px solid var(--paper-dark); border-radius:8px; padding:5px 10px; cursor:pointer; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.prompt-history-text:active { background:var(--paper-dark); }
+.prompt-history-del { flex-shrink:0; background:none; border:none; color:var(--ink-faint); font-size:13px; cursor:pointer; padding:4px 6px; border-radius:6px; }
+.record-del-btn { margin-left:auto; font-size:12px; color:var(--ink-faint); cursor:pointer; padding:2px 6px; border-radius:6px; background:none; border:none; }
+.record-del-btn:active { background:#fee2e2; color:#ef4444; }
 .prompt-history-label { font-size:11px; color:var(--ink-faint); margin:10px 0 6px; letter-spacing:0.05em; }
 .prompt-history-item { display:flex; align-items:center; gap:6px; margin-bottom:6px; }
 .prompt-history-text { flex:1; font-size:12px; color:var(--ink-light); background:var(--paper); border:1px solid var(--paper-dark); border-radius:8px; padding:5px 10px; cursor:pointer; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
@@ -608,6 +615,14 @@ function deleteRecord(id) {
   showToast('已删除 ✓');
 }
 
+function deleteRecord(id) {
+  if (!confirm('确认删除这条记录？')) return;
+  records = records.filter(r => r.id !== id);
+  saveRecords();
+  renderRecords(); updateDiaryStats(); updateTodayLabel(); renderWeekly();
+  showToast('已删除 ✓');
+}
+
 function playVoice(url) { if(!url){showToast('示例语音无法播放'); return;} new Audio(url).play(); }
 
 // ── Diary ──
@@ -700,6 +715,7 @@ async function generateDiary() {
   const prompt = `今天是${new Date().toLocaleDateString('zh-CN',{year:'numeric',month:'long',day:'numeric'})}。\n\n以下是我今天的随手记录：\n\n${txt}\n\n请用第一人称写一篇今日日记，${_styleHint}，200-300字，直接输出正文。`;
   const fallback = `今天是个普通又不普通的一天。\n\n早晨出门，看到路边的花悄悄开了，那种白——不是刺眼的那种，是带着一点奶气的温柔白，配上空气里飘来的淡香，整个人一下子清醒了。有时候觉得，生活里这些小小的意外惊喜，才是最治愈的部分。\n\n中午在新宿找到了那家骨汤面馆，浓而不腻，加一勺辣油，烫嘴却舍不得慢下来。食物是有记忆的，某种味道，某种温度，就那么把人牢牢钉在那个时刻。\n\n下午在咖啡馆坐了很久。书翻了没几页，更多时候是在发呆，看窗外的人来来去去。突然觉得不需要每天都冲在最前面，慢慢走，也是一种走法。\n\n今天算是好好地活了一天。`;
   // 保存用户自定义提示词
+  if (_userStyle) saveCustomPrompt(_userStyle);
   if (_userStyle) saveCustomPrompt(_userStyle);
   await streamGen(prompt, el, ()=>{
     document.getElementById('diaryHeadline').textContent='今日日记已生成';
