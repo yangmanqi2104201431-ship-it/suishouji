@@ -136,6 +136,20 @@ body {
 .diary-content-card { background:#fff;border-radius:var(--radius);border:1.5px solid var(--paper-dark);padding:22px 18px;box-shadow:var(--shadow);min-height:180px; }
 .diary-body { font-size:15px;line-height:2;color:var(--ink);white-space:pre-wrap; }
 .diary-placeholder { color:var(--ink-faint);font-size:13px;line-height:1.8;text-align:center;padding:36px 0; }
+/* 提示词调配面板 */
+.prompt-panel { background:#fff; border-radius:var(--radius); border:1.5px solid var(--paper-dark); overflow:hidden; }
+.prompt-panel-title { display:flex; justify-content:space-between; align-items:center; padding:12px 16px; cursor:pointer; font-size:13px; font-weight:600; color:var(--ink); user-select:none; }
+.prompt-panel-title:active { background:var(--paper-dark); }
+.prompt-arrow { font-size:16px; transition:transform 0.25s; color:var(--ink-light); }
+.prompt-arrow.open { transform:rotate(180deg); }
+.prompt-panel-body { padding:0 14px 14px; display:none; }
+.prompt-panel-body.open { display:block; }
+.prompt-presets { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px; }
+.preset-tag { padding:6px 13px; border-radius:20px; border:1.5px solid var(--paper-dark); background:#fff; font-size:12px; color:var(--ink-light); cursor:pointer; transition:all 0.18s; }
+.preset-tag:active { transform:scale(0.96); }
+.preset-tag.selected { background:var(--accent); color:#fff; border-color:var(--accent); }
+.prompt-custom { width:100%; box-sizing:border-box; border:1.5px solid var(--paper-dark); border-radius:10px; padding:10px 12px; font-size:13px; color:var(--ink); background:var(--paper); resize:none; outline:none; line-height:1.7; font-family:inherit; }
+.prompt-custom:focus { border-color:var(--accent); }
 
 /* Weekly */
 .weekly-section { padding: 16px; display: flex; flex-direction: column; gap: 12px; }
@@ -238,6 +252,26 @@ body {
           <span>📝 <span id="statCount">0</span> 条</span>
           <span>📷 <span id="statPhotos">0</span> 张</span>
           <span>🎙 <span id="statVoice">0</span> 段</span>
+        </div>
+      </div>
+      <!-- 提示词调配区 -->
+      <div class="prompt-panel">
+        <div class="prompt-panel-title" onclick="togglePromptPanel()">
+          <span>🎨 日记风格调配</span>
+          <span class="prompt-arrow" id="promptArrow">▾</span>
+        </div>
+        <div class="prompt-panel-body" id="promptPanelBody">
+          <div class="prompt-presets">
+            <button class="preset-tag" onclick="selectPreset(this, '重点写今天的心情变化，细腻地描写情绪起伏，帮我看见内心深处的感受。')">😊 心情变化</button>
+            <button class="preset-tag" onclick="selectPreset(this, '用夸夸体风格，找出今天所有值得表扬自己的瞬间，让我感受到自己超棒的！')">🌟 夸夸日记</button>
+            <button class="preset-tag" onclick="selectPreset(this, '从成长视角出发，挖掘今天经历背后的收获与领悟，激励我继续前进。')">🚀 成长激励</button>
+            <button class="preset-tag" onclick="selectPreset(this, '用诗意优美的文学风格书写，语言充满意境，像一篇散文诗。')">🌸 诗意文学</button>
+            <button class="preset-tag" onclick="selectPreset(this, '写成给未来自己的一封信，温柔地记录此刻，让未来的我读到时会感动。')">💌 给未来的信</button>
+            <button class="preset-tag" onclick="selectPreset(this, '像和好朋友聊天一样，用轻松幽默的口吻写，多一点俏皮感。')">😄 轻松幽默</button>
+          </div>
+          <div class="prompt-custom-wrap">
+            <textarea class="prompt-custom" id="customPrompt" placeholder="或者写下你自己的风格要求，比如：用古风语言写、重点写食物描写…（留空则使用默认风格）" rows="3"></textarea>
+          </div>
         </div>
       </div>
       <button class="btn-generate" id="generateBtn" onclick="generateDiary()"><span>✨</span><span>AI 生成今日日记</span></button>
@@ -583,6 +617,29 @@ function updateDiaryStats() {
   document.getElementById('diaryDateLabel').textContent = `${d.getMonth()+1} 月 ${d.getDate()} 日 · 今日日记`;
 }
 
+function togglePromptPanel() {
+  const body = document.getElementById('promptPanelBody');
+  const arrow = document.getElementById('promptArrow');
+  const isOpen = body.classList.contains('open');
+  body.classList.toggle('open', !isOpen);
+  arrow.classList.toggle('open', !isOpen);
+}
+
+function selectPreset(btn, text) {
+  // 切换选中状态
+  const allBtns = document.querySelectorAll('.preset-tag');
+  const isAlreadySelected = btn.classList.contains('selected');
+  allBtns.forEach(b => b.classList.remove('selected'));
+  const textarea = document.getElementById('customPrompt');
+  if (isAlreadySelected) {
+    // 再次点击取消选中，清空textarea
+    textarea.value = '';
+  } else {
+    btn.classList.add('selected');
+    textarea.value = text;
+  }
+}
+
 async function generateDiary() {
   const recs = records.filter(r=>r.date===todayKey());
   if (!recs.length) { showToast('今天还没有记录～'); return; }
@@ -594,7 +651,9 @@ async function generateDiary() {
   const el = document.getElementById('diaryContent');
   el.innerHTML='<div class="loading-dots"><span></span><span></span><span></span></div>';
   const txt = recs.map(r=>`[${r.time}]${r.tag?` #${r.tag}`:''}${r.location?` 📍${r.location}`:''}\n${r.text||(r.voice?`（语音 ${fmtDur(r.voice.duration)}）`:'')}`).join('\n\n');
-  const prompt = `今天是${new Date().toLocaleDateString('zh-CN',{year:'numeric',month:'long',day:'numeric'})}。\n\n以下是我今天的随手记录：\n\n${txt}\n\n请用第一人称写一篇今日日记，风格温暖，有生活气息，200-300字，有情感有感悟，可提地点，结尾一句感想，直接输出正文。`;
+  const _userStyle = (document.getElementById('customPrompt')?.value||'').trim();
+  const _styleHint = _userStyle || '风格温暖，有生活气息，有情感有感悟，可提地点，结尾一句感想';
+  const prompt = `今天是${new Date().toLocaleDateString('zh-CN',{year:'numeric',month:'long',day:'numeric'})}。\n\n以下是我今天的随手记录：\n\n${txt}\n\n请用第一人称写一篇今日日记，${_styleHint}，200-300字，直接输出正文。`;
   const fallback = `今天是个普通又不普通的一天。\n\n早晨出门，看到路边的花悄悄开了，那种白——不是刺眼的那种，是带着一点奶气的温柔白，配上空气里飘来的淡香，整个人一下子清醒了。有时候觉得，生活里这些小小的意外惊喜，才是最治愈的部分。\n\n中午在新宿找到了那家骨汤面馆，浓而不腻，加一勺辣油，烫嘴却舍不得慢下来。食物是有记忆的，某种味道，某种温度，就那么把人牢牢钉在那个时刻。\n\n下午在咖啡馆坐了很久。书翻了没几页，更多时候是在发呆，看窗外的人来来去去。突然觉得不需要每天都冲在最前面，慢慢走，也是一种走法。\n\n今天算是好好地活了一天。`;
   await streamGen(prompt, el, ()=>{
     document.getElementById('diaryHeadline').textContent='今日日记已生成';
