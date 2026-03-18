@@ -7,14 +7,6 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@300;400;500&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
 <link rel="manifest" href="/manifest.json">
-<!-- Microsoft Clarity -->
-<script type="text/javascript">
-  (function(c,l,a,r,i,t,y){
-    c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
-    t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
-    y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
-  })(window, document, "clarity", "script", "vxnd8fh3l4");
-</script>
 <script>
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('/sw.js');
@@ -315,28 +307,6 @@ let audioChunks = [];
 let voiceTimerInt = null;
 let voiceSecs = 0;
 // ══ 埋点工具函数 ══
-function track(eventName, props) {
-  try {
-    if (window.clarity) {
-      window.clarity('event', eventName);
-      // 把属性拍平为自定义标签
-      if (props) {
-        Object.entries(props).forEach(([k, v]) => {
-          window.clarity('set', k, String(v));
-        });
-      }
-    }
-  } catch(e) {}
-}
-
-// 页面访问 & 停留时长
-const _pageEnterTime = Date.now();
-track('page_view');
-window.addEventListener('beforeunload', () => {
-  const sec = Math.round((Date.now() - _pageEnterTime) / 1000);
-  track('page_leave', { stay_seconds: sec });
-});
-
 // ── 埋点工具函数 ──
 function track(eventName, props) {
   try {
