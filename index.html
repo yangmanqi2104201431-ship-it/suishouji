@@ -171,6 +171,13 @@ body {
 .cursor { display:inline-block;width:2px;height:1em;background:var(--accent);margin-left:1px;animation:blink 0.8s infinite;vertical-align:text-bottom; }
 @keyframes blink { 0%,100%{opacity:1}50%{opacity:0} }
 </style>
+<link rel="manifest" href="/manifest.json">
+<script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js');
+  }
+</script>
+```
 </head>
 <body>
 <div class="phone">
