@@ -905,7 +905,7 @@ function renderHistory(){
         return '<div class="hist-rec-item">'+(r.text?'<div>'+esc(r.text)+'</div>':'')+voiceH+'<div class="hist-rec-meta"><span>'+r.time+'</span>'+locH+tagH+'</div></div>';
       }).join('');
       return '<div class="hist-card">'+
-        '<div class="hist-card-header" onclick="toggleHistCard(''+cid+'')">'+
+        '<div class="hist-card-header" onclick="toggleHistCard(\"'+cid+'\")">'+
           '<span class="hist-card-title">'+label+'</span>'+
           '<span style="display:flex;gap:6px;align-items:center">'+
             (hasV?'<span style="font-size:12px">🎙</span>':'')+
@@ -917,7 +917,7 @@ function renderHistory(){
         '<div class="hist-card-body" id="hbody-'+cid+'">'+esc(excerpt||'（图片或语音记录）')+'</div>'+
         '<div class="hist-card-detail" id="hdetail-'+cid+'" style="display:none">'+recItems+'</div>'+
         '<div class="hist-card-actions" id="hactions-'+cid+'" style="display:none">'+
-          '<button class="hist-action-btn danger" onclick="event.stopPropagation();deleteHistDate(''+date+'')">🗑 删除该日全部记录</button>'+
+          '<button class="hist-action-btn danger" onclick="event.stopPropagation();deleteHistDate(\"'+date+'\")">🗑 删除该日全部记录</button>'+
         '</div>'+
       '</div>';
     }).join('');
@@ -930,7 +930,7 @@ function renderHistory(){
       const cid='ai-'+entry.id;
       const preview=(entry.content||'').replace(/\n/g,' ').slice(0,60);
       return '<div class="hist-card">'+
-        '<div class="hist-card-header" onclick="toggleHistCard(''+cid+'')">'+
+        '<div class="hist-card-header" onclick="toggleHistCard(\"'+cid+'\")">'+
           '<span class="hist-card-title">'+icon+' '+entry.dateLabel+' · '+tl+'</span>'+
           '<span class="hist-expand-arrow" id="harrow-'+cid+'">▾</span>'+
         '</div>'+
