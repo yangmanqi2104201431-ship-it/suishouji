@@ -13,7 +13,7 @@
   }
 </script>
 <!-- Microsoft Clarity -->
-<script type="text/javascript">
+<script type="text/javascript">h
   (function(c,l,a,r,i,t,y){
     c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
     t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
@@ -173,6 +173,22 @@ body {
 .hist-expand-arrow.open { transform:rotate(180deg); }
 .hist-rec-item { padding:10px 14px; border-top:1px solid var(--paper-dark); font-size:13px; color:var(--ink); line-height:1.7; }
 .hist-rec-meta { font-size:11px; color:var(--ink-faint); margin-top:4px; display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+
+.hist-rec-delete-btn {
+  flex-shrink: 0;
+  background: none;
+  border: 1px solid rgb(254, 202, 202);
+  border-radius: 6px;
+  color: rgb(239, 68, 68);
+  font-size: 11px;
+  cursor: pointer;
+  padding: 2px 8px;
+  line-height: 1.6;
+  margin-left: 6px;
+}
+.hist-rec-delete-btn:active {
+  background: rgb(254, 226, 226);
+}
 
 
 .prompt-history-label { font-size:11px; color:var(--ink-faint); margin:10px 0 6px; letter-spacing:0.05em; }
@@ -882,72 +898,117 @@ function deleteHistDate(date){
   records=records.filter(r=>r.date!==date);
   saveRecords();renderHistory();showToast('已删除 ✓');
 }
-function renderHistory(){
-  const el=document.getElementById('historyList');
-  const byDate={};
-  records.forEach(r=>{if(!byDate[r.date])byDate[r.date]=[];byDate[r.date].push(r);});
-  const dates=Object.keys(byDate).sort((a,b)=>b.localeCompare(a));
-  const aiEntries=loadAiEntries();
-  if(!dates.length&&!aiEntries.length){el.innerHTML='<div class="empty-state"><div class="icon">📚</div><p>还没有历史记录</p></div>';return;}
-  let out='';
-  if(dates.length){
-    out+='<div class="hist-section-label">📝 随手记录</div>';
-    out+=dates.map(date=>{
-      const recs=byDate[date],[,m,d]=date.split('-');
-      const label=parseInt(m)+'月'+parseInt(d)+'日';
-      const excerpt=recs.map(r=>r.text).filter(Boolean).join(' · ').slice(0,60);
-      const hasV=recs.some(r=>r.voice),hasI=recs.some(r=>r.images&&r.images.length);
-      const cid='rec-'+date;
-      const recItems=recs.map(r=>{
-        const tagH=r.tag?'<span style="background:var(--accent-soft);color:var(--accent);border-radius:4px;padding:1px 6px;font-size:11px">#'+r.tag+'</span>':'';
-        const locH=r.location?'<span>📍'+esc(r.location)+'</span>':'';
-        const voiceH=r.voice?'<div style="font-size:12px;color:var(--ink-light);margin:4px 0">🎙 语音 '+fmtDur(r.voice.duration)+'</div>':'';
-        return '<div class="hist-rec-item">'+(r.text?'<div>'+esc(r.text)+'</div>':'')+voiceH+'<div class="hist-rec-meta"><span>'+r.time+'</span>'+locH+tagH+'</div></div>';
-      }).join('');
-      return '<div class="hist-card">'+
-        '<div class="hist-card-header" onclick="toggleHistCard(\"'+cid+'\")">'+
-          '<span class="hist-card-title">'+label+'</span>'+
-          '<span style="display:flex;gap:6px;align-items:center">'+
-            (hasV?'<span style="font-size:12px">🎙</span>':'')+
-            (hasI?'<span style="font-size:12px">📷</span>':'')+
-            '<span style="font-size:11px;color:var(--ink-faint)">'+recs.length+' 条</span>'+
-            '<span class="hist-expand-arrow" id="harrow-'+cid+'">▾</span>'+
-          '</span>'+
-        '</div>'+
-        '<div class="hist-card-body" id="hbody-'+cid+'">'+esc(excerpt||'（图片或语音记录）')+'</div>'+
-        '<div class="hist-card-detail" id="hdetail-'+cid+'" style="display:none">'+recItems+'</div>'+
-        '<div class="hist-card-actions" id="hactions-'+cid+'" style="display:none">'+
-          '<button class="hist-action-btn danger" onclick="event.stopPropagation();deleteHistDate(\"'+date+'\")">🗑 删除该日全部记录</button>'+
-        '</div>'+
-      '</div>';
-    }).join('');
-  }
-  if(aiEntries.length){
-    out+='<div class="hist-section-label" style="margin-top:18px">✨ AI 日记 & 周报</div>';
-    out+=aiEntries.map(entry=>{
-      const icon=entry.type==='diary'?'📖':'📋';
-      const tl=entry.type==='diary'?'日记':'周报';
-      const cid='ai-'+entry.id;
-      const preview=(entry.content||'').replace(/\n/g,' ').slice(0,60);
-      return '<div class="hist-card">'+
-        '<div class="hist-card-header" onclick="toggleHistCard(\"'+cid+'\")">'+
-          '<span class="hist-card-title">'+icon+' '+entry.dateLabel+' · '+tl+'</span>'+
-          '<span class="hist-expand-arrow" id="harrow-'+cid+'">▾</span>'+
-        '</div>'+
-        '<div class="hist-card-body" id="hbody-'+cid+'">'+esc(preview)+'…</div>'+
-        '<div class="hist-card-detail" id="hdetail-'+cid+'" style="display:none;padding:12px 14px;font-size:13px;color:var(--ink);line-height:1.9;white-space:pre-wrap;border-top:1px solid var(--paper-dark)">'+esc(entry.content||'')+'</div>'+
-        '<div class="hist-card-actions" id="hactions-'+cid+'" style="display:none">'+
-          '<div style="font-size:11px;color:var(--ink-faint);margin-bottom:4px">'+entry.savedAt+'</div>'+
-          '<button class="hist-action-btn danger" onclick="event.stopPropagation();deleteAiEntry('+entry.id+')">🗑 删除</button>'+
-        '</div>'+
-      '</div>';
-    }).join('');
-  }
-  el.innerHTML=out;
-}
-
-// ── Nav ──
-document.querySelectorAll('.tab,.nav-item').forEach(el=>el.addEventListener('click',()=>{const v=el.dataset.view;if(v)switchView(v);}));
+function renderHistory() {
+      const list = document.getElementById('historyList');
+      if (!list) return;
+      const raw = localStorage.getItem('ssj_v2');
+      const records = raw ? JSON.parse(raw) : [];
+      const aiRaw = localStorage.getItem('ssj_ai_entries');
+      const aiEntries = aiRaw ? JSON.parse(aiRaw) : [];
+      list.innerHTML = '';
+      function esc(s) {
+        return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+      }
+      // ---- 随手记录 ----
+      const byDate = {};
+      const dateOrder = [];
+      records.forEach(r => {
+        if (!byDate[r.date]) { byDate[r.date] = []; dateOrder.push(r.date); }
+        byDate[r.date].push(r);
+      });
+      const uniqueDates = [...new Set(dateOrder)];
+      if (uniqueDates.length > 0) {
+        const label = document.createElement('div');
+        label.className = 'hist-section-label';
+        label.textContent = '📝 随手记录';
+        list.appendChild(label);
+        uniqueDates.forEach(date => {
+          const recs = byDate[date];
+          const key = 'rec-' + date;
+          const previewText = recs.map(r => {
+            if (r.text) return r.text;
+            if (r.images && r.images.length) return '[图片]';
+            if (r.voice) return '[语音]';
+            return '';
+          }).filter(Boolean).join(' · ');
+          const hasVoice = recs.some(r => r.voice);
+          const photoCount = recs.reduce((n, r) => n + (r.images ? r.images.length : 0), 0);
+          const dateObj = new Date(date + 'T00:00:00');
+          const monthNames = ['1','2','3','4','5','6','7','8','9','10','11','12'];
+          const dateDisplay = monthNames[dateObj.getMonth()] + '月' + dateObj.getDate() + '日';
+          let iconsHtml = '';
+          if (hasVoice) iconsHtml += '<span style="font-size:11px;color:var(--ink-faint);margin-right:3px">🎙</span>';
+          if (photoCount > 0) iconsHtml += '<span style="font-size:11px;color:var(--ink-faint);margin-right:3px">📷</span>';
+          let itemsHtml = '';
+          recs.forEach(r => {
+            let contentHtml = '';
+            if (r.text) contentHtml += '<div style="margin-bottom:3px;white-space:pre-wrap">' + esc(r.text) + '</div>';
+            if (r.voice) contentHtml += '<div style="font-size:12px;color:var(--ink-light)">🎙 语音 ' + fmtDur(r.voice.duration) + '</div>';
+            if (r.images && r.images.length > 0) {
+              contentHtml += '<div style="margin-top:4px;display:flex;gap:4px;flex-wrap:wrap">';
+              r.images.forEach(img => {
+                contentHtml += '<img src="' + img + '" style="width:60px;height:60px;object-fit:cover;border-radius:6px;border:1px solid var(--paper-dark)">';
+              });
+              contentHtml += '</div>';
+            }
+            let metaHtml = '<span>' + esc(r.time) + '</span>';
+            if (r.location) metaHtml += '<span>📍' + esc(r.location) + '</span>';
+            if (r.tag) metaHtml += '<span>#' + esc(r.tag) + '</span>';
+            itemsHtml += '<div class="hist-rec-item" style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">';
+            itemsHtml += '<div style="flex:1;min-width:0">' + contentHtml + '<div class="hist-rec-meta">' + metaHtml + '</div></div>';
+            itemsHtml += '<button class="hist-rec-delete-btn" onclick="event.stopPropagation();if(confirm(\'删除这条记录？\')){deleteRecord(' + r.id + ');renderHistory();}" title="删除">🗑</button>';
+            itemsHtml += '</div>';
+          });
+          const card = document.createElement('div');
+          card.className = 'hist-card';
+          card.style.marginBottom = '10px';
+          card.innerHTML =
+            '<div class="hist-card-header" onclick="toggleHistCard(\'' + key + '\')">' +
+              '<span class="hist-card-title">' + esc(dateDisplay) + '</span>' +
+              '<span style="display:flex;align-items:center;gap:4px">' + iconsHtml +
+                '<span style="font-size:12px;color:var(--ink-faint)">' + recs.length + ' 条</span>' +
+                '<span class="hist-expand-arrow" id="harrow-' + key + '">▾</span>' +
+              '</span>' +
+            '</div>' +
+            '<div class="hist-card-body" id="hbody-' + key + '">' + esc(previewText) + '</div>' +
+            '<div class="hist-card-detail" id="hdetail-' + key + '" style="display:none">' + itemsHtml + '</div>' +
+            '<div class="hist-card-actions" id="hactions-' + key + '" style="display:none">' +
+              '<button class="hist-action-btn danger" onclick="event.stopPropagation();if(confirm(\'删除 ' + esc(dateDisplay) + ' 的全部记录？\')){deleteHistDate(\'' + date + '\');renderHistory();}">🗑 删除该日全部记录</button>' +
+            '</div>';
+          list.appendChild(card);
+        });
+      }
+      // ---- AI 日记 & 周报 ----
+      if (aiEntries.length > 0) {
+        const aiLabel = document.createElement('div');
+        aiLabel.className = 'hist-section-label';
+        aiLabel.style.marginTop = '18px';
+        aiLabel.textContent = '✨ AI 日记 & 周报';
+        list.appendChild(aiLabel);
+        aiEntries.forEach(entry => {
+          const key = 'ai-' + entry.id;
+          const icon = entry.type === 'diary' ? '📖' : '📋';
+          const typeLabel = entry.type === 'diary' ? '日记' : '周报';
+          const title = icon + ' ' + entry.dateLabel + ' · ' + typeLabel;
+          const preview = entry.content.replace(/\n/g, ' ').substring(0, 80) + '…';
+          const card = document.createElement('div');
+          card.className = 'hist-card';
+          card.style.marginBottom = '10px';
+          card.innerHTML =
+            '<div class="hist-card-header" onclick="toggleHistCard(\'' + key + '\')">' +
+              '<span class="hist-card-title">' + esc(title) + '</span>' +
+              '<span class="hist-expand-arrow" id="harrow-' + key + '">▾</span>' +
+            '</div>' +
+            '<div class="hist-card-body" id="hbody-' + key + '">' + esc(preview) + '</div>' +
+            '<div class="hist-card-detail" id="hdetail-' + key + '" style="display:none;padding:10px 14px;font-size:13px;color:var(--ink);line-height:1.8;white-space:pre-wrap;border-top:1px solid var(--paper-dark)">' + esc(entry.content) + '</div>' +
+            '<div class="hist-card-actions" id="hactions-' + key + '" style="display:none">' +
+              '<div style="font-size:11px;color:var(--ink-faint);margin-bottom:4px">' + esc(entry.savedAt || '') + '</div>' +
+              '<button class="hist-action-btn danger" onclick="event.stopPropagation();if(confirm(\'删除这篇' + esc(typeLabel) + '？\')){deleteAiEntry(' + entry.id + ');renderHistory();}">🗑 删除</button>' +
+            '</div>';
+          list.appendChild(card);
+        });
+      }
+    }
 function switchView(v) {
   document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));
   document.querySelectorAll('.tab,.nav-item').forEach(x=>x.classList.remove('active'));
