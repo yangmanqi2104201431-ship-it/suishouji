@@ -159,19 +159,22 @@ body {
 .record-del-btn:active { background:#fee2e2; color:#ef4444; }
 .hist-section-label { font-size:11px; font-weight:600; color:var(--ink-faint); letter-spacing:0.08em; margin:4px 0 10px; }
 .hist-card { background:#fff; border-radius:12px; border:1.5px solid var(--paper-dark); overflow:hidden; box-shadow:0 1px 5px rgba(44,36,22,0.05); }
-.hist-card-header { padding:11px 14px 8px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid var(--paper-dark); }
+.hist-card-header { padding:11px 14px 8px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid var(--paper-dark); cursor:pointer; user-select:none; }
+.hist-card-header:active { background:var(--paper); }
 .hist-card-title { font-family:'ZCOOL XiaoWei',serif; font-size:14px; color:var(--ink); }
 .hist-card-body { padding:9px 14px 10px; font-size:13px; color:var(--ink-light); line-height:1.7; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
-.hist-section-label { font-size:11px; font-weight:600; color:var(--ink-faint); letter-spacing:0.08em; margin:4px 0 10px; }
-.hist-card { background:#fff; border-radius:12px; border:1.5px solid var(--paper-dark); overflow:hidden; box-shadow:0 1px 5px rgba(44,36,22,0.05); }
-.hist-card-header { padding:11px 14px 8px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid var(--paper-dark); }
-.hist-card-title { font-family:'ZCOOL XiaoWei',serif; font-size:14px; color:var(--ink); }
-.hist-card-body { padding:9px 14px 10px; font-size:13px; color:var(--ink-light); line-height:1.7; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
-.hist-section-label { font-size:11px; font-weight:600; color:var(--ink-faint); letter-spacing:0.08em; margin:4px 0 10px; }
-.hist-card { background:#fff; border-radius:12px; border:1.5px solid var(--paper-dark); overflow:hidden; box-shadow:0 1px 5px rgba(44,36,22,0.05); }
-.hist-card-header { padding:11px 14px 8px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid var(--paper-dark); }
-.hist-card-title { font-family:'ZCOOL XiaoWei',serif; font-size:14px; color:var(--ink); }
-.hist-card-body { padding:9px 14px 10px; font-size:13px; color:var(--ink-light); line-height:1.7; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
+.hist-card-body.expanded { display:block; -webkit-line-clamp:unset; white-space:pre-wrap; }
+.hist-card-actions { display:flex; flex-direction:column; padding:0 14px 12px; }
+.hist-action-btn { width:100%; padding:8px 0; border:1.5px solid var(--paper-dark); border-radius:8px; background:#fff; font-size:12px; color:var(--ink-light); cursor:pointer; text-align:center; margin-top:6px; }
+.hist-action-btn:active { background:var(--paper-dark); }
+.hist-action-btn.danger { border-color:#fecaca; color:#ef4444; }
+.hist-action-btn.danger:active { background:#fee2e2; }
+.hist-expand-arrow { font-size:12px; color:var(--ink-faint); transition:transform 0.2s; margin-left:6px; display:inline-block; }
+.hist-expand-arrow.open { transform:rotate(180deg); }
+.hist-rec-item { padding:10px 14px; border-top:1px solid var(--paper-dark); font-size:13px; color:var(--ink); line-height:1.7; }
+.hist-rec-meta { font-size:11px; color:var(--ink-faint); margin-top:4px; display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+
+
 .prompt-history-label { font-size:11px; color:var(--ink-faint); margin:10px 0 6px; letter-spacing:0.05em; }
 .prompt-history-item { display:flex; align-items:center; gap:6px; margin-bottom:6px; }
 .prompt-history-text { flex:1; font-size:12px; color:var(--ink-light); background:var(--paper); border:1px solid var(--paper-dark); border-radius:8px; padding:5px 10px; cursor:pointer; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
@@ -862,6 +865,23 @@ function deleteAiEntry(id){let list=loadAiEntries().filter(e=>e.id!==id);try{loc
 function saveAiEntry(type,dateLabel,content){let list=loadAiEntries();list=list.filter(e=>!(e.type===type&&e.dateLabel===dateLabel));list.unshift({id:Date.now(),type,dateLabel,content,savedAt:new Date().toLocaleString('zh-CN')});list=list.slice(0,60);try{localStorage.setItem('ssj_ai_entries',JSON.stringify(list));}catch{}}
 function loadAiEntries(){try{return JSON.parse(localStorage.getItem('ssj_ai_entries')||'[]');}catch{return[];}}
 function deleteAiEntry(id){let list=loadAiEntries().filter(e=>e.id!==id);try{localStorage.setItem('ssj_ai_entries',JSON.stringify(list));}catch{}renderHistory();showToast('已删除 ✓');}
+function toggleHistCard(id){
+  const body=document.getElementById('hbody-'+id);
+  const detail=document.getElementById('hdetail-'+id);
+  const arrow=document.getElementById('harrow-'+id);
+  const actions=document.getElementById('hactions-'+id);
+  if(!body)return;
+  const isOpen=body.classList.contains('expanded');
+  body.classList.toggle('expanded',!isOpen);
+  if(detail)detail.style.display=isOpen?'none':'block';
+  if(arrow)arrow.classList.toggle('open',!isOpen);
+  if(actions)actions.style.display=isOpen?'none':'block';
+}
+function deleteHistDate(date){
+  if(!confirm('确认删除 '+date+' 的所有随手记录？'))return;
+  records=records.filter(r=>r.date!==date);
+  saveRecords();renderHistory();showToast('已删除 ✓');
+}
 function renderHistory(){
   const el=document.getElementById('historyList');
   const byDate={};
@@ -870,8 +890,59 @@ function renderHistory(){
   const aiEntries=loadAiEntries();
   if(!dates.length&&!aiEntries.length){el.innerHTML='<div class="empty-state"><div class="icon">📚</div><p>还没有历史记录</p></div>';return;}
   let out='';
-  if(dates.length){out+='<div class="hist-section-label">📝 随手记录</div>';out+=dates.map(date=>{const recs=byDate[date],[,m,d]=date.split('-');const label=parseInt(m)+'月'+parseInt(d)+'日';const excerpt=recs.map(r=>r.text).filter(Boolean).join(' · ').slice(0,65);const hasV=recs.some(r=>r.voice),hasI=recs.some(r=>r.images&&r.images.length);return '<div class="hist-card"><div class="hist-card-header"><span class="hist-card-title">'+label+'</span><span style="display:flex;gap:6px;align-items:center">'+(hasV?'<span style="font-size:12px">🎙</span>':'')+(hasI?'<span style="font-size:12px">📷</span>':'')+'<span style="font-size:11px;color:var(--ink-faint)">'+recs.length+' 条</span></span></div><div class="hist-card-body">'+esc(excerpt||'（图片或语音记录）')+'</div></div>';}).join('');}
-  if(aiEntries.length){out+='<div class="hist-section-label" style="margin-top:18px">✨ AI 日记 & 周报</div>';out+=aiEntries.map(entry=>{const icon=entry.type==='diary'?'📖':'📋';const tl=entry.type==='diary'?'日记':'周报';const preview=(entry.content||'').replace(/\n/g,' ').slice(0,80);return '<div class="hist-card"><div class="hist-card-header"><span class="hist-card-title">'+icon+' '+entry.dateLabel+' · '+tl+'</span><button class="record-del-btn" onclick="deleteAiEntry('+entry.id+')" title="删除">✕</button></div><div class="hist-card-body">'+esc(preview)+'…</div><div style="padding:0 14px 10px;font-size:11px;color:var(--ink-faint)">'+entry.savedAt+'</div></div>';}).join('');}
+  if(dates.length){
+    out+='<div class="hist-section-label">📝 随手记录</div>';
+    out+=dates.map(date=>{
+      const recs=byDate[date],[,m,d]=date.split('-');
+      const label=parseInt(m)+'月'+parseInt(d)+'日';
+      const excerpt=recs.map(r=>r.text).filter(Boolean).join(' · ').slice(0,60);
+      const hasV=recs.some(r=>r.voice),hasI=recs.some(r=>r.images&&r.images.length);
+      const cid='rec-'+date;
+      const recItems=recs.map(r=>{
+        const tagH=r.tag?'<span style="background:var(--accent-soft);color:var(--accent);border-radius:4px;padding:1px 6px;font-size:11px">#'+r.tag+'</span>':'';
+        const locH=r.location?'<span>📍'+esc(r.location)+'</span>':'';
+        const voiceH=r.voice?'<div style="font-size:12px;color:var(--ink-light);margin:4px 0">🎙 语音 '+fmtDur(r.voice.duration)+'</div>':'';
+        return '<div class="hist-rec-item">'+(r.text?'<div>'+esc(r.text)+'</div>':'')+voiceH+'<div class="hist-rec-meta"><span>'+r.time+'</span>'+locH+tagH+'</div></div>';
+      }).join('');
+      return '<div class="hist-card">'+
+        '<div class="hist-card-header" onclick="toggleHistCard(''+cid+'')">'+
+          '<span class="hist-card-title">'+label+'</span>'+
+          '<span style="display:flex;gap:6px;align-items:center">'+
+            (hasV?'<span style="font-size:12px">🎙</span>':'')+
+            (hasI?'<span style="font-size:12px">📷</span>':'')+
+            '<span style="font-size:11px;color:var(--ink-faint)">'+recs.length+' 条</span>'+
+            '<span class="hist-expand-arrow" id="harrow-'+cid+'">▾</span>'+
+          '</span>'+
+        '</div>'+
+        '<div class="hist-card-body" id="hbody-'+cid+'">'+esc(excerpt||'（图片或语音记录）')+'</div>'+
+        '<div class="hist-card-detail" id="hdetail-'+cid+'" style="display:none">'+recItems+'</div>'+
+        '<div class="hist-card-actions" id="hactions-'+cid+'" style="display:none">'+
+          '<button class="hist-action-btn danger" onclick="event.stopPropagation();deleteHistDate(''+date+'')">🗑 删除该日全部记录</button>'+
+        '</div>'+
+      '</div>';
+    }).join('');
+  }
+  if(aiEntries.length){
+    out+='<div class="hist-section-label" style="margin-top:18px">✨ AI 日记 & 周报</div>';
+    out+=aiEntries.map(entry=>{
+      const icon=entry.type==='diary'?'📖':'📋';
+      const tl=entry.type==='diary'?'日记':'周报';
+      const cid='ai-'+entry.id;
+      const preview=(entry.content||'').replace(/\n/g,' ').slice(0,60);
+      return '<div class="hist-card">'+
+        '<div class="hist-card-header" onclick="toggleHistCard(''+cid+'')">'+
+          '<span class="hist-card-title">'+icon+' '+entry.dateLabel+' · '+tl+'</span>'+
+          '<span class="hist-expand-arrow" id="harrow-'+cid+'">▾</span>'+
+        '</div>'+
+        '<div class="hist-card-body" id="hbody-'+cid+'">'+esc(preview)+'…</div>'+
+        '<div class="hist-card-detail" id="hdetail-'+cid+'" style="display:none;padding:12px 14px;font-size:13px;color:var(--ink);line-height:1.9;white-space:pre-wrap;border-top:1px solid var(--paper-dark)">'+esc(entry.content||'')+'</div>'+
+        '<div class="hist-card-actions" id="hactions-'+cid+'" style="display:none">'+
+          '<div style="font-size:11px;color:var(--ink-faint);margin-bottom:4px">'+entry.savedAt+'</div>'+
+          '<button class="hist-action-btn danger" onclick="event.stopPropagation();deleteAiEntry('+entry.id+')">🗑 删除</button>'+
+        '</div>'+
+      '</div>';
+    }).join('');
+  }
   el.innerHTML=out;
 }
 
