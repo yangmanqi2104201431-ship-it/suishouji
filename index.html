@@ -396,11 +396,12 @@ let voiceSecs = 0;
 function track(eventName, props) {
   try {
     if (window.clarity) window.clarity('event', eventName);
-    // 打印到控制台方便调试
+    // Umami 自定义事件
+    if (window.umami) window.umami.track(eventName, props || {});
     console.log('[track]', eventName, props || '');
   } catch(e) {}
 }
-
+  
 // 记录页面进入时间，用于计算停留时长
 let _pageEnterTime = Date.now();
 let _currentTab = 'record';
